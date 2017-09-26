@@ -62,7 +62,6 @@ class Agent:
                 # print calculate_reward(st), " ", self.Q[st.dealer-1, st.playerSum-1, ac.value]
                 # print calculate_reward(state), " ", self.Q[st.dealer-1, st.playerSum-1, ac.value]
                 self.Q[st.dealer-1, st.playerSum-1, ac.value] += float(tmp) * err
-                #print self.Q[st.dealer-1, st.playerSum-1, ac.value]
 
             if calculate_reward(st) == 1 :
                 self.wins += 1
@@ -73,6 +72,60 @@ class Agent:
         for d in xrange(DEALER_VALUES):
             for p in xrange(PLAYER_VALUES):
                 self.V[d, p] = float(max(self.Q[d, p, :]))
+        print "win rate: %s" % (float(self.wins) / self.iter)
+
+    # Sarsa(lambda) method
+    def TD_control(self, iterations, l):
+        self.iter = iterations
+        self.method = "Sarsa"
+
+        for ep in xrange(self.iter):
+            self.E = np.zeros((DEALER_VALUES, PLAYER_VALUES, ACT_VALUES))
+
+            dealerCard = random.randint(1, 10)
+            playerCard = random.randint(1, 10)
+            # initialize s
+            state = State(dealer=dealerCard, playerSum=playerCard)
+            # initialize a using e-greedy
+            act = self.eps_greedy_action(state)
+
+            while state.isTerminal == False:
+                self.N[state.dealerSum-1, state.playerSum-1, act.value] += 1
+                newState = step(state, act)
+                reward = calculate_reward(newState)
+                if newState.isTerminal == False:
+                    newAct = self.eps_greedy_action(newState)
+                else:
+                    # it doesn't matter what action to take
+                    newAct = Action(0)
+
+                try:
+                    error = reward + self.Q[newState.dealerSum-1, newState.playerSum-1, newAct.value] - self.Q[state.dealerSum-1, state.playerSum-1, act.value]
+                except:
+                    error = reward - self.Q[state.dealerSum-1, state.playerSum-1, act.value]
+                self.E[state.dealerSum-1, state.playerSum-1, act.value] += 1
+                # update step
+                alpha = float(1) / self.N[state.dealerSum-1, state.playerSum-1, act.value]
+
+                for dl in xrange(DEALER_VALUES):
+                    for pl in xrange(PLAYER_VALUES):
+                        for ac in xrange(ACT_VALUES):
+                            self.Q[dl, pl, ac] += alpha * error * self.E[dl, pl, ac]
+                            self.E[dl, pl, ac] = self.E[dl, pl, ac] * l
+
+                state = newState
+                act = newAct
+
+            if calculate_reward(state)==1:
+                self.wins += 1
+
+            if ep%200 == 0:
+                print "episode... %s" % ep
+
+            for d in xrange(DEALER_VALUES):
+                for p in xrange(PLAYER_VALUES):
+                    self.V[d, p] = float(max(self.Q[d, p, :]))
+
         print "win rate: %s" % (float(self.wins) / self.iter)
 
 

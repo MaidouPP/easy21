@@ -53,6 +53,8 @@ def step(state, action):
     return newState
 
 def calculate_reward(state):
+    if state.isTerminal == False:
+        return 0
     if state.burst:
         return -1
     else:
