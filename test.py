@@ -13,6 +13,14 @@ def test_td_control(iter=50000):
         agent.TD_control(iter, l)
         agent.plot_state()
 
+def test_td_control_linear_app(iter=50000):
+    lambdas = [0.0, 1.0]
+    for l in lambdas:
+        agent = Agent()
+        agent.TD_control_linear_app(iter, 0.9)
+        agent.plot_state()
+
 if __name__=='__main__':
     # test_mc_control()
-    test_td_control()
+    # test_td_control()
+    test_td_control_linear_app()
